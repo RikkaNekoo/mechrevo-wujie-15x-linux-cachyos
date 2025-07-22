@@ -1,0 +1,376 @@
+From 0674597618a7eb9cf974eb60a0d554a1511d3af5 Mon Sep 17 00:00:00 2001
+From: RikkaNekoo <rikka@rikka.im>
+Date: Tue, 22 Jul 2025 23:22:01 +0800
+Subject: [PATCH] modify
+
+---
+ linux-cachyos/PKGBUILD |  16 +--
+ linux-cachyos/config   |   9 ++
+ modprobed.db           | 243 +++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 261 insertions(+), 7 deletions(-)
+ create mode 100644 modprobed.db
+
+diff --git a/linux-cachyos/PKGBUILD b/linux-cachyos/PKGBUILD
+index 86e0b8b6..b1996c17 100644
+--- a/linux-cachyos/PKGBUILD
++++ b/linux-cachyos/PKGBUILD
+@@ -36,10 +36,10 @@
+ # This PKGBUILD read the database kept if it exists
+ #
+ # More at this wiki page ---> https://wiki.archlinux.org/index.php/Modprobed-db
+-: "${_localmodcfg:=no}"
++: "${_localmodcfg:=yes}"
+ 
+ # Path to the list of used modules
+-: "${_localmodcfg_path:="$HOME/.config/modprobed.db"}"
++: "${_localmodcfg_path:="./modprobed.db"}"
+ 
+ # Use the current kernel's .config file
+ # Enabling this option will use the .config of the RUNNING kernel rather than
+@@ -55,7 +55,7 @@
+ : "${_per_gov:=no}"
+ 
+ ### Enable TCP_CONG_BBR3
+-: "${_tcp_bbr3:=no}"
++: "${_tcp_bbr3:=yes}"
+ 
+ ### Running with a 1000HZ, 750Hz, 600 Hz, 500Hz, 300Hz, 250Hz and 100Hz tick rate
+ : "${_HZ_ticks:=1000}"
+@@ -79,7 +79,7 @@
+ # - "native" (use compiler autodetection)
+ # - "zen4" (Use znver4 compiler optimizations)
+ # - "generic" (kernel's default - to share the package between machines with different CPU µarch as long as they are x86-64)
+-: "${_processor_opt:=}"
++: "${_processor_opt:=zen4}"
+ 
+ # Clang LTO mode, only available with the "llvm" compiler - options are "none", "full" or "thin".
+ # ATTENTION - one of three predefined values should be selected!
+@@ -87,7 +87,7 @@
+ # "thin: uses multiple threads, faster and uses less memory, may have a lower runtime performance than Full."
+ # "thin-dist: Similar to thin, but uses a distributed model rather than in-process: https://discourse.llvm.org/t/rfc-distributed-thinlto-build-for-kernel/85934"
+ # "none: disable LTO
+-: "${_use_llvm_lto:=none}"
++: "${_use_llvm_lto:=thin}"
+ 
+ # Use suffix -lto only when requested by the user
+ # Enabled by default.
+@@ -110,7 +110,7 @@
+ # Build the zfs module in to the kernel
+ # WARNING: The ZFS module doesn't build with selected RT sched due to licensing issues.
+ # If you use ZFS, refrain from building the RT kernel
+-: "${_build_zfs:=no}"
++: "${_build_zfs:=yes}"
+ 
+ # Builds the nvidia module and package it into a own base
+ # This does replace the requirement of nvidia-dkms
+@@ -206,7 +206,9 @@ _nv_open_pkg="NVIDIA-kernel-module-source-${_nv_ver}"
+ source=(
+     "https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/${_srcname}.tar.xz"
+     "config"
+-    "${_patchsource}/all/0001-cachyos-base-all.patch")
++    "${_patchsource}/all/0001-cachyos-base-all.patch"
++    "https://github.com/bigshans/cjktty-patches/raw/refs/heads/master/v6.x/cjktty-6.9.patch"
++    "https://github.com/bigshans/cjktty-patches/raw/refs/heads/master/cjktty-add-cjk32x32-font-data.patch")
+ 
+ # LLVM makedepends
+ if _is_lto_kernel; then
+diff --git a/linux-cachyos/config b/linux-cachyos/config
+index 64ce3b81..0c4377de 100644
+--- a/linux-cachyos/config
++++ b/linux-cachyos/config
+@@ -7042,6 +7042,8 @@ CONFIG_DRM_PANIC_FOREGROUND_COLOR=0xffffff
+ CONFIG_DRM_PANIC_BACKGROUND_COLOR=0x0000aa
+ # CONFIG_DRM_PANIC_DEBUG is not set
+ CONFIG_DRM_PANIC_SCREEN="kmsg"
++CONFIG_DRM_PANIC_SCREEN_QR_CODE=y
++CONFIG_DRM_PANIC_SCREEN_QR_CODE_URL="https://kdj0c.github.io/panic_report#"
+ CONFIG_DRM_CLIENT=y
+ CONFIG_DRM_CLIENT_LIB=y
+ CONFIG_DRM_CLIENT_SELECTION=y
+@@ -7499,6 +7501,7 @@ CONFIG_SND_RIPTIDE=m
+ CONFIG_SND_RME32=m
+ CONFIG_SND_RME96=m
+ CONFIG_SND_RME9652=m
++CONFIG_SND_SE6X=m
+ CONFIG_SND_SONICVIBES=m
+ CONFIG_SND_TRIDENT=m
+ CONFIG_SND_VIA82XX=m
+@@ -9923,6 +9926,9 @@ CONFIG_ADIS16209=m
+ CONFIG_ADXL313=m
+ CONFIG_ADXL313_I2C=m
+ CONFIG_ADXL313_SPI=m
++CONFIG_ADXL345=m
++CONFIG_ADXL345_I2C=m
++CONFIG_ADXL345_SPI=m
+ CONFIG_ADXL355=m
+ CONFIG_ADXL355_I2C=m
+ CONFIG_ADXL355_SPI=m
+@@ -9935,6 +9941,7 @@ CONFIG_ADXL372_I2C=m
+ CONFIG_ADXL380=m
+ CONFIG_ADXL380_SPI=m
+ CONFIG_ADXL380_I2C=m
++CONFIG_BMA180=m
+ CONFIG_BMA220=m
+ CONFIG_BMA400=m
+ CONFIG_BMA400_I2C=m
+@@ -11830,6 +11837,8 @@ CONFIG_FONT_8x16=y
+ # CONFIG_FONT_10x18 is not set
+ # CONFIG_FONT_SUN8x16 is not set
+ # CONFIG_FONT_SUN12x22 is not set
++CONFIG_FONT_CJK_16x16=y
++CONFIG_FONT_CJK_32x32=y
+ CONFIG_FONT_TER16x32=y
+ # CONFIG_FONT_6x8 is not set
+ CONFIG_SG_POOL=y
+diff --git a/modprobed.db b/modprobed.db
+new file mode 100644
+index 00000000..6ef02881
+--- /dev/null
++++ b/modprobed.db
+@@ -0,0 +1,243 @@
++842_compress
++842_decompress
++ac97_bus
++act_csum
++aesni_intel
++af_alg
++algif_hash
++algif_skcipher
++amd_atl
++amdgpu
++amd_pmc
++amdxcp
++amdxdna
++apple_mfi_fastcharge
++asus_wmi
++atkbd
++blake2b_generic
++bluetooth
++bnep
++bpf_preload
++bridge
++btbcm
++btintel
++btmtk
++btrfs
++btrtl
++btusb
++ccm
++ccp
++cdc_acm
++cdc_ether
++cdc_mbim
++cdc_ncm
++cdc_wdm
++cdrom
++cec
++cfg80211
++ch341
++cifs
++cls_bpf
++cls_u32
++cmac
++cp210x
++crc16
++crc32c_generic
++crc32c_intel
++crc32_pclmul
++crct10dif_pclmul
++cryptd
++crypto_simd
++crypto_user
++dm_mod
++drm_buddy
++drm_display_helper
++drm_exec
++drm_panel_backlight_quirks
++drm_suballoc_helper
++drm_ttm_helper
++efivarfs
++exfat
++fat
++ff_memless
++gf128mul
++ghash_clmulni_intel
++gpu_sched
++grace
++hid_generic
++hid_multitouch
++i2c_algo_bit
++i2c_dev
++i2c_hid
++i2c_hid_acpi
++i2c_piix4
++i2c_smbus
++i8042
++intel_rapl_common
++intel_rapl_msr
++ipheth
++ip_tables
++irqbypass
++isofs
++joydev
++k10temp
++kvm
++kvm_amd
++led_class_multicolor
++libarc4
++libcrc32c
++libps2
++llc
++lockd
++loop
++lz4
++lz4_compress
++lz4hc_compress
++mac80211
++mac_hid
++mc
++mii
++mousedev
++mt76
++mt76_connac_lib
++mt7921_common
++mt7921e
++mt792x_lib
++netfs
++nf_conntrack
++nf_defrag_ipv4
++nf_defrag_ipv6
++nf_nat
++nfnetlink
++nf_reject_ipv4
++nf_reject_ipv6
++nfs
++nfs_localio
++nf_tables
++nft_chain_nat
++nft_ct
++nft_masq
++nft_reject
++nft_reject_ipv4
++nft_reject_ipv6
++nls_ascii
++nls_cp437
++ntfs3
++ntsync
++nvme
++nvme_auth
++nvme_core
++nvme_keyring
++pcspkr
++pkcs8_key_parser
++platform_profile
++polyval_clmulni
++polyval_generic
++raid6_pq
++rapl
++rfcomm
++rfkill
++roles
++sch_fq_codel
++sch_htb
++sch_ingress
++serio
++serio_raw
++sg
++sha1_ssse3
++sha256_ssse3
++sha512_ssse3
++snd
++snd_acp_config
++snd_acp_legacy_common
++snd_acp_pci
++snd_amd_acpi_mach
++snd_amd_sdw_acpi
++snd_compress
++snd_hda_codec
++snd_hda_codec_conexant
++snd_hda_codec_generic
++snd_hda_codec_hdmi
++snd_hda_core
++snd_hda_intel
++snd_hrtimer
++snd_hwdep
++snd_intel_dspcfg
++snd_intel_sdw_acpi
++snd_pci_acp3x
++snd_pci_acp5x
++snd_pci_acp6x
++snd_pci_ps
++snd_pcm
++snd_pcm_dmaengine
++snd_rawmidi
++snd_rn_pci_acp3x
++snd_rpl_pci_acp6x
++snd_seq
++snd_seq_device
++snd_seq_dummy
++snd_seq_midi
++snd_seq_midi_event
++snd_soc_acpi
++snd_soc_acpi_amd_match
++snd_soc_core
++snd_soc_sdca
++snd_sof
++snd_sof_amd_acp
++snd_sof_amd_acp63
++snd_sof_amd_acp70
++snd_sof_amd_rembrandt
++snd_sof_amd_renoir
++snd_sof_amd_vangogh
++snd_sof_pci
++snd_sof_utils
++snd_sof_xtensa_dsp
++snd_timer
++snd_ump
++snd_usb_audio
++snd_usbmidi_lib
++soundcore
++soundwire_amd
++soundwire_bus
++soundwire_generic_allocation
++sparse_keymap
++spd5118
++spi_ch341
++sr_mod
++stk8312
++stp
++sunrpc
++tap
++thunderbolt
++ttm
++tun
++typec
++typec_displayport
++typec_thunderbolt
++typec_ucsi
++uas
++ucsi_acpi
++uniwill_wmi
++usbhid
++usbnet
++usb_storage
++uvc
++uvcvideo
++veth
++vfat
++vhost
++vhost_iotlb
++vhost_net
++video
++videobuf2_common
++videobuf2_memops
++videobuf2_v4l2
++videobuf2_vmalloc
++videodev
++vivaldi_fmap
++wmi
++wmi_bmof
++xor
++xpad
++x_tables
++zram
+-- 
+2.50.1
+
