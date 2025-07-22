@@ -11,8 +11,7 @@ jobs:
       run: |
         git clone https://github.com/CachyOS/linux-cachyos.git
         cd linux-cachyos
-        curl -sL https://raw.githubusercontent.com/RikkaNekoo/mechrevo-wujie-15x-linux-cachyos/refs/heads/main/0001-modify.patch > 0001-modify.patch
-        git am 0001-modify.patch
+        curl -sL https://raw.githubusercontent.com/RikkaNekoo/mechrevo-wujie-15x-linux-cachyos/refs/heads/main/0001-modify.patch | patch -p1
         rm linux-cachyos/.SRCINFO
 
     - name: Run makepkg
